@@ -1,114 +1,53 @@
-#include <ESP8266WiFi.h>
+#include <SPI.h>
+#include <WiFi101.h>
+
+char ssid[] = "Apt_4126";
+char pass[] = "TheGlendon4126";
+int keyIndex = 0;
+
+bool first = true;
+String s = "";
+
+const short int DO = 22;
+const short int RE = 24;
+const short int MI = 26;
+const short int FA = 28;
+const short int SO = 30;
+const short int LA = 32;
+const short int TI = 34;
+
+void HappyBirthday();
+void printWifiStatus();
+
+int status = WL_IDLE_STATUS;
 
 WiFiServer server(80);
-const short int DO = D0; // GPIO16
-const short int RE = D4; // GPIO2
-/*const short int MI = ; // GPIO
-const short int FA = ; // GPIO
-const short int SO = ; // GPIO
-const short int LA = ; // GPIO
-const short int TI = ; // GPIO*/
 
-void setup() {
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(DO, OUTPUT);
+  digitalWrite(DO, HIGH); //Initial state is OFF
+  pinMode(RE, OUTPUT);
+  digitalWrite(RE, HIGH);
+  pinMode(MI, OUTPUT);
+  digitalWrite(MI, HIGH);
+  pinMode(FA, OUTPUT);
+  digitalWrite(FA, HIGH);
+  pinMode(SO, OUTPUT);
+  digitalWrite(SO, HIGH);
+  pinMode(LA, OUTPUT);
+  digitalWrite(LA, HIGH);
+  pinMode(TI, OUTPUT);
+  digitalWrite(TI, HIGH);
+  pinMode(TI, OUTPUT);
 
-WiFi.mode(WIFI_AP);
-WiFi.softAP("ESP8266", "laafakhaayega");
-server.begin();
-
-
-Serial.begin(115200); // Start communication between the ESP8266-12E and the monitor window
-IPAddress HTTPS_ServerIP= WiFi.softAPIP(); // Obtain the IP of the Server 
-Serial.print("Server IP is: ");
-Serial.println(HTTPS_ServerIP);
-
-pinMode(DO, OUTPUT);
-digitalWrite(DO, LOW); //Initial state is OFF
-pinMode(RE, OUTPUT);
-digitalWrite(RE, LOW); //Initial state is OFF
-/*
-pinMode(MI, OUTPUT);
-digitalWrite(MI, LOW); //Initial state is OFF
-pinMode(FA, OUTPUT);
-digitalWrite(FA, LOW); //Initial state is OFF
-pinMode(SO, OUTPUT);
-digitalWrite(SO, LOW); //Initial state is OFF
-pinMode(LA, OUTPUT);
-digitalWrite(LA, LOW); //Initial state is OFF
-pinMode(TI, OUTPUT);
-digitalWrite(TI, LOW); //Initial state is OFF
-pinMode(TI, OUTPUT);
-*/
-}
-
-void loop() {
-  
-WiFiClient client = server.available();
-if (!client) { 
-return; 
-} 
-
-Serial.println("Somebody has connected :)");
-
-//Read what the browser has sent into a String class and print the request to the monitor
-String request = client.readStringUntil('\r'); 
-Serial.println(request);
-
-// Handle the Request
-
-
-if (request.indexOf("/DO") != -1)
-  { 
-    digitalWrite(DO, HIGH);
-    delay(1000);
-    digitalWrite(DO, LOW);
-  }
-else if (request.indexOf("/RE") != -1)
-  { 
-    digitalWrite(RE, HIGH);
-    delay(1000);
-    digitalWrite(RE, LOW);
-  }/*
-else if (request.indexOf("/MI") != -1)
-  { 
-    digitalWrite(MI, HIGH);
-    delay(1000);
-    digitalWrite(MI, LOW);
-  }
-else if (request.indexOf("/FA") != -1)
-  { 
-    digitalWrite(FA, HIGH);
-    delay(1000);
-    digitalWrite(FA, LOW);
-  }
-else if (request.indexOf("/SO") != -1)
-  { 
-    digitalWrite(SO, HIGH);
-    delay(1000);
-    digitalWrite(SO, LOW);
-  }
-else if (request.indexOf("/LA") != -1)
-  { 
-    digitalWrite(LA, HIGH);
-    delay(1000);
-    digitalWrite(LA, LOW);
-  }
-else if (request.indexOf("/TI") != -1)
-  { 
-    digitalWrite(TI, HIGH);
-    delay(1000);
-    digitalWrite(TI, LOW);
-  }
-  */
-
-
-  // Prepare the HTML document to respond and add buttons:
-  String s = "HTTP/1/1 200 OK\r\n";
+  s = "HTTP/1/1 200 OK\r\n";
   s += "Content-Type: text/html\r\n\r\n";
   s += "<!DOCTYPE HTML>\r\n<html>\r\n";
   s += "<br><input = type=\"button\" name\"b1\" value=\"DO\" onclick=\"location.href='/DO'\">";
   s += "<br><br><br>";
   s += "<br><input = type=\"button\" name\"b1\" value=\"RE\" onclick=\"location.href='/RE'\">";
-  /*
   s += "<br><br><br>";
   s += "<br><input = type=\"button\" name\"b1\" value=\"MI\" onclick=\"location.href='/MI'\">";
   s += "<br><br><br>";
@@ -119,103 +58,252 @@ else if (request.indexOf("/TI") != -1)
   s += "<br><input = type=\"button\" name\"b1\" value=\"LA\" onclick=\"location.href='/LA'\">";
   s += "<br><br><br>";
   s += "<br><input = type=\"button\" name\"b1\" value=\"TI\" onclick=\"location.href='/TI'\">";
-  */
+  s += "<br><br><br>";
+  s += "<br><input = type=\"button\" name\"b1\" value=\"Happy Birthday\" onclick=\"location.href='/HappyBirthday'\">";
   s += "</html>\n";
 
-//Serve the HTML document to the browser.
+  if (WiFi.status() == WL_NO_SHIELD)
+  {
+    Serial.println("WiFi shield not present");
+    while (true);
+  }
 
-client.flush(); //clear previous info in the stream 
-client.print(s); // Send the response to the client 
-delay(1); 
-Serial.println("Client disonnected"); //Looking under the hood
+  while (status != WL_CONNECTED)
+  {
+    Serial.print("Attempting to connect to SSID: ");
+    Serial.println(ssid);
+    status = WiFi.begin(ssid, pass);
+    delay(10);
+  }
+  server.begin();
+  printWifiStatus();
 }
 
 
+void loop()
+{
+  WiFiClient client = server.available();
 
+  if (!client)
+  {
+    return;
+  }
 
+  String request = client.readString();
+  if (request == "")
+  {
+    return;
+  }
+  Serial.println(request);
+  if (first)
+  {
+    client.flush(); //clear previous info in the stream
+    client.print(s); // Send the response to the client
+    Serial.println(s);
+    delay(10);
+    first = false;
+    client.stop();
+    return;
+  }
 
-// To play pre-recorded songs we need to create buttons for the songs and then depending on the button pressed call a function that has the notes for that song
+  if (request.indexOf(" /DO") != -1)
+  {
+    client.flush(); //clear previous info in the stream
+    client.print(s); // Send the response to the client
+    delay(10);
+    Serial.println(s);
+    digitalWrite(DO, LOW);
+    delay(1000);
+    digitalWrite(DO, HIGH);
+  }
+  else if (request.indexOf(" /RE") != -1)
+  {
+    client.flush(); //clear previous info in the stream
+    client.print(s); // Send the response to the client
+    delay(10);
+    Serial.println(s);
+    digitalWrite(RE, LOW);
+    delay(1000);
+    digitalWrite(RE, HIGH);
+  }
+  else if (request.indexOf(" /MI") != -1)
+  {
+    client.flush(); //clear previous info in the stream
+    client.print(s); // Send the response to the client
+    delay(10);
+    Serial.println(s);
+    digitalWrite(MI, LOW);
+    delay(1000);
+    digitalWrite(MI, HIGH);
+  }
+  else if (request.indexOf(" /FA") != -1)
+  {
+    client.flush(); //clear previous info in the stream
+    client.print(s); // Send the response to the client
+    delay(10);
+    Serial.println(s);
+    digitalWrite(FA, LOW);
+    delay(1000);
+    digitalWrite(FA, HIGH);
+  }
+  else if (request.indexOf(" /SO") != -1)
+  {
+    client.flush(); //clear previous info in the stream
+    client.print(s); // Send the response to the client
+    delay(10);
+    Serial.println(s);
+    digitalWrite(SO, LOW);
+    delay(1000);
+    digitalWrite(SO, HIGH);
+  }
+  else if (request.indexOf(" /LA") != -1)
+  {
+    client.flush(); //clear previous info in the stream
+    client.print(s); // Send the response to the client
+    delay(10);
+    Serial.println(s);
+    digitalWrite(LA, LOW);
+    delay(1000);
+    digitalWrite(LA, HIGH);
+  }
+  else if (request.indexOf(" /TI") != -1)
+  {
+    client.flush(); //clear previous info in the stream
+    client.print(s); // Send the response to the client
+    delay(10);
+    Serial.println(s);
+    digitalWrite(TI, LOW);
+    delay(1000);
+    digitalWrite(TI, HIGH);
+  }
+  else if (request.indexOf(" /HappyBirthday") != -1)
+  {
+    client.flush(); //clear previous info in the stream
+    client.print(s); // Send the response to the client
+    delay(10);
+    Serial.println(s);
+    HappyBirthday();
+  }
+  else
+  {
+    return;
+  }
+  client.stop();
+}
 
-/*
+void printWifiStatus()
+{
+  Serial.print("SSID: ");
+  Serial.println(WiFi.SSID());
+
+  IPAddress ip = WiFi.localIP();
+  Serial.print("IP Address: ");
+  Serial.println(ip);
+}
+
 void HappyBirthday()
 {
-  digitalWrite(DO, HIGH);
-  delay(500);
   digitalWrite(DO, LOW);
+  delay(200);
   digitalWrite(DO, HIGH);
-  delay(500);
+  delay(100);
   digitalWrite(DO, LOW);
-  digitalWrite(RE, HIGH);
-  delay(500);
+  delay(200);
+  digitalWrite(DO, HIGH);
+  delay(200);
   digitalWrite(RE, LOW);
-  digitalWrite(DO, HIGH);
-  delay(500);
+  delay(300);
+  digitalWrite(RE, HIGH);
+  delay(200);
   digitalWrite(DO, LOW);
-  digitalWrite(FA, HIGH);
-  delay(500);
+  delay(250);
+  digitalWrite(DO, HIGH);
+  delay(200);
   digitalWrite(FA, LOW);
+  delay(300);
+  digitalWrite(FA, HIGH);
+  delay(200);
+  digitalWrite(MI, LOW);
+  delay(500);
   digitalWrite(MI, HIGH);
-  delay(500);
-  digitalWrite(MI, LOW);
+  delay(1000);
 
-  digitalWrite(DO, HIGH);
-  delay(500);
   digitalWrite(DO, LOW);
+  delay(200);
   digitalWrite(DO, HIGH);
-  delay(500);
+  delay(100);
   digitalWrite(DO, LOW);
-  digitalWrite(RE, HIGH);
-  delay(500);
+  delay(200);
+  digitalWrite(DO, HIGH);
+  delay(200);
   digitalWrite(RE, LOW);
-  digitalWrite(DO, HIGH);
-  delay(500);
-  digitalWrite(DO, LOW);
-  digitalWrite(SO, HIGH);
-  delay(500);
-  digitalWrite(SO, LOW);
-  digitalWrite(FA, HIGH);
-  delay(500);
-  digitalWrite(FA, LOW);
-
-  digitalWrite(DO, HIGH);
-  delay(500);
-  digitalWrite(DO, LOW);
-  digitalWrite(DO, HIGH);
-  delay(500);
-  digitalWrite(DO, LOW);
-  digitalWrite(DO, HIGH);
-  delay(500);
-  digitalWrite(DO, LOW);
-  digitalWrite(LA, HIGH);
-  delay(500);
-  digitalWrite(LA, LOW);
-  digitalWrite(FA, HIGH);
-  delay(500);
-  digitalWrite(FA, LOW);
-  digitalWrite(MIA, HIGH);
-  delay(500);
-  digitalWrite(MI, LOW);
+  delay(300);
   digitalWrite(RE, HIGH);
-  delay(500);
-  digitalWrite(RE, LOW);
-
-  digitalWrite(TI, HIGH);
-  delay(500);
-  digitalWrite(TI, LOW);
-  digitalWrite(TI, HIGH);
-  delay(500);
-  digitalWrite(TI, LOW);
-  digitalWrite(LA, HIGH);
-  delay(500);
-  digitalWrite(LA, LOW);
-  digitalWrite(FA, HIGH);
-  delay(500);
-  digitalWrite(FA, LOW);
-  digitalWrite(SO, HIGH);
-  delay(500);
+  delay(200);
+  digitalWrite(DO, LOW);
+  delay(250);
+  digitalWrite(DO, HIGH);
+  delay(200);
   digitalWrite(SO, LOW);
-  digitalWrite(FA, HIGH);
+  delay(300);
+  digitalWrite(SO, HIGH);
+  delay(200);
+  digitalWrite(FA, LOW);
   delay(500);
-  digitalWrite(FA, LOW); 
+  digitalWrite(FA, HIGH);
+  delay(1000);
+
+  digitalWrite(DO, LOW);
+  delay(250);
+  digitalWrite(DO, HIGH);
+  delay(200);
+  digitalWrite(DO, LOW);
+  delay(250);
+  digitalWrite(DO, HIGH);
+  delay(200);
+  digitalWrite(DO, LOW);
+  delay(250);
+  digitalWrite(DO, HIGH);
+  delay(200);
+  digitalWrite(LA, LOW);
+  delay(250);
+  digitalWrite(LA, HIGH);
+  delay(200);
+  digitalWrite(FA, LOW);
+  delay(250);
+  digitalWrite(FA, HIGH);
+  delay(200);
+  digitalWrite(MI, LOW);
+  delay(250);
+  digitalWrite(MI, HIGH);
+  delay(200);
+  digitalWrite(RE, LOW);
+  delay(250);
+  digitalWrite(RE, HIGH);
+  delay(200);
+
+  digitalWrite(TI, LOW);
+  delay(250);
+  digitalWrite(TI, HIGH);
+  delay(200);
+  digitalWrite(TI, LOW);
+  delay(250);
+  digitalWrite(TI, HIGH);
+  delay(200);
+  digitalWrite(LA, LOW);
+  delay(250);
+  digitalWrite(LA, HIGH);
+  delay(200);
+  digitalWrite(FA, LOW);
+  delay(250);
+  digitalWrite(FA, HIGH);
+  delay(200);
+  digitalWrite(SO, LOW);
+  delay(250);
+  digitalWrite(SO, HIGH);
+  delay(200);
+  digitalWrite(FA, LOW);
+  delay(250);
+  digitalWrite(FA, HIGH);
+  delay(200);
 }
-*/
