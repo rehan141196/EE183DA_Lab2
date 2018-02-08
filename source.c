@@ -7,6 +7,7 @@ int keyIndex = 0;
 
 bool first = true;
 String s = "";
+String favicon = "HTTP/1/1 404 Not Found\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n<head><title>Not Found</title></head><body>Sorry</body></html>\n";
 
 const short int DO = 22;
 const short int RE = 24;
@@ -15,6 +16,7 @@ const short int FA = 28;
 const short int SO = 30;
 const short int LA = 32;
 const short int TI = 34;
+const short int SERVO = 36;
 
 void HappyBirthday();
 void printWifiStatus();
@@ -40,7 +42,9 @@ void setup()
   digitalWrite(LA, HIGH);
   pinMode(TI, OUTPUT);
   digitalWrite(TI, HIGH);
-  pinMode(TI, OUTPUT);
+  pinMode(SERVO, OUTPUT);
+  digitalWrite(SERVO, LOW);
+  
 
   s = "HTTP/1/1 200 OK\r\n";
   s += "Content-Type: text/html\r\n\r\n";
@@ -95,6 +99,14 @@ void loop()
     return;
   }
   Serial.println(request);
+  if (request.indexOf("/favicon.ico") != -1)
+  {
+    client.flush();
+    client.print(favicon);
+    delay(10);
+    client.stop();
+    return;
+  }
   if (first)
   {
     client.flush(); //clear previous info in the stream
@@ -111,6 +123,7 @@ void loop()
     client.flush(); //clear previous info in the stream
     client.print(s); // Send the response to the client
     delay(10);
+    client.stop();
     Serial.println(s);
     digitalWrite(DO, LOW);
     delay(1000);
@@ -121,6 +134,7 @@ void loop()
     client.flush(); //clear previous info in the stream
     client.print(s); // Send the response to the client
     delay(10);
+    client.stop();
     Serial.println(s);
     digitalWrite(RE, LOW);
     delay(1000);
@@ -131,6 +145,7 @@ void loop()
     client.flush(); //clear previous info in the stream
     client.print(s); // Send the response to the client
     delay(10);
+    client.stop();
     Serial.println(s);
     digitalWrite(MI, LOW);
     delay(1000);
@@ -141,6 +156,7 @@ void loop()
     client.flush(); //clear previous info in the stream
     client.print(s); // Send the response to the client
     delay(10);
+    client.stop();
     Serial.println(s);
     digitalWrite(FA, LOW);
     delay(1000);
@@ -151,6 +167,7 @@ void loop()
     client.flush(); //clear previous info in the stream
     client.print(s); // Send the response to the client
     delay(10);
+    client.stop();
     Serial.println(s);
     digitalWrite(SO, LOW);
     delay(1000);
@@ -161,6 +178,7 @@ void loop()
     client.flush(); //clear previous info in the stream
     client.print(s); // Send the response to the client
     delay(10);
+    client.stop();
     Serial.println(s);
     digitalWrite(LA, LOW);
     delay(1000);
@@ -171,6 +189,7 @@ void loop()
     client.flush(); //clear previous info in the stream
     client.print(s); // Send the response to the client
     delay(10);
+    client.stop();
     Serial.println(s);
     digitalWrite(TI, LOW);
     delay(1000);
@@ -181,14 +200,15 @@ void loop()
     client.flush(); //clear previous info in the stream
     client.print(s); // Send the response to the client
     delay(10);
+    client.stop();
     Serial.println(s);
     HappyBirthday();
   }
   else
   {
+    client.stop();
     return;
   }
-  client.stop();
 }
 
 void printWifiStatus()
@@ -203,6 +223,7 @@ void printWifiStatus()
 
 void HappyBirthday()
 {
+  digitalWrite(SERVO, HIGH);
   digitalWrite(DO, LOW);
   delay(200);
   digitalWrite(DO, HIGH);
@@ -306,4 +327,5 @@ void HappyBirthday()
   delay(250);
   digitalWrite(FA, HIGH);
   delay(200);
+  digitalWrite(SERVO, LOW);
 }
