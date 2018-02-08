@@ -17,6 +17,7 @@ const short int SO = 30;
 const short int LA = 32;
 const short int TI = 34;
 const short int SERVO = 36;
+const short int TOUCH = 42;
 
 void HappyBirthday();
 void printWifiStatus();
@@ -29,7 +30,7 @@ void setup()
 {
   Serial.begin(9600);
   pinMode(DO, OUTPUT);
-  digitalWrite(DO, HIGH); //Initial state is OFF
+  digitalWrite(DO, HIGH); // Initial state is OFF for all pins
   pinMode(RE, OUTPUT);
   digitalWrite(RE, HIGH);
   pinMode(MI, OUTPUT);
@@ -44,7 +45,9 @@ void setup()
   digitalWrite(TI, HIGH);
   pinMode(SERVO, OUTPUT);
   digitalWrite(SERVO, LOW);
-  
+  pinMode(TOUCH, INPUT);
+
+  // Create the HTML response
 
   s = "HTTP/1/1 200 OK\r\n";
   s += "Content-Type: text/html\r\n\r\n";
@@ -72,6 +75,8 @@ void setup()
     while (true);
   }
 
+  // Connect to WiFi
+
   while (status != WL_CONNECTED)
   {
     Serial.print("Attempting to connect to SSID: ");
@@ -79,13 +84,18 @@ void setup()
     status = WiFi.begin(ssid, pass);
     delay(10);
   }
-  server.begin();
+  server.begin(); // Start the server 
   printWifiStatus();
 }
 
 
 void loop()
 {
+  if (digitalRead(TOUCH) == HIGH) // Play Happy Birthday if touch sensor is pressed
+  {
+    HappyBirthday();
+  }
+
   WiFiClient client = server.available();
 
   if (!client)
@@ -93,13 +103,14 @@ void loop()
     return;
   }
 
-  String request = client.readString();
+  String request = client.readString(); // Read in the request
   if (request == "")
   {
     return;
   }
+
   Serial.println(request);
-  if (request.indexOf("/favicon.ico") != -1)
+  if (request.indexOf("/favicon.ico") != -1) // Some browsers require a response for favicons
   {
     client.flush();
     client.print(favicon);
@@ -107,9 +118,10 @@ void loop()
     client.stop();
     return;
   }
-  if (first)
+
+  if (first) // First time the client has connected
   {
-    client.flush(); //clear previous info in the stream
+    client.flush();
     client.print(s); // Send the response to the client
     Serial.println(s);
     delay(10);
@@ -118,9 +130,11 @@ void loop()
     return;
   }
 
+  // Handle the request
+
   if (request.indexOf(" /DO") != -1)
   {
-    client.flush(); //clear previous info in the stream
+    client.flush();
     client.print(s); // Send the response to the client
     delay(10);
     client.stop();
@@ -131,7 +145,7 @@ void loop()
   }
   else if (request.indexOf(" /RE") != -1)
   {
-    client.flush(); //clear previous info in the stream
+    client.flush();
     client.print(s); // Send the response to the client
     delay(10);
     client.stop();
@@ -142,7 +156,7 @@ void loop()
   }
   else if (request.indexOf(" /MI") != -1)
   {
-    client.flush(); //clear previous info in the stream
+    client.flush();
     client.print(s); // Send the response to the client
     delay(10);
     client.stop();
@@ -153,7 +167,7 @@ void loop()
   }
   else if (request.indexOf(" /FA") != -1)
   {
-    client.flush(); //clear previous info in the stream
+    client.flush();
     client.print(s); // Send the response to the client
     delay(10);
     client.stop();
@@ -164,7 +178,7 @@ void loop()
   }
   else if (request.indexOf(" /SO") != -1)
   {
-    client.flush(); //clear previous info in the stream
+    client.flush();
     client.print(s); // Send the response to the client
     delay(10);
     client.stop();
@@ -175,7 +189,7 @@ void loop()
   }
   else if (request.indexOf(" /LA") != -1)
   {
-    client.flush(); //clear previous info in the stream
+    client.flush();
     client.print(s); // Send the response to the client
     delay(10);
     client.stop();
@@ -186,7 +200,7 @@ void loop()
   }
   else if (request.indexOf(" /TI") != -1)
   {
-    client.flush(); //clear previous info in the stream
+    client.flush();
     client.print(s); // Send the response to the client
     delay(10);
     client.stop();
@@ -197,7 +211,7 @@ void loop()
   }
   else if (request.indexOf(" /HappyBirthday") != -1)
   {
-    client.flush(); //clear previous info in the stream
+    client.flush();
     client.print(s); // Send the response to the client
     delay(10);
     client.stop();
@@ -223,7 +237,7 @@ void printWifiStatus()
 
 void HappyBirthday()
 {
-  digitalWrite(SERVO, HIGH);
+  digitalWrite(SERVO, HIGH); // Turn on the servo for the other Arduino
   digitalWrite(DO, LOW);
   delay(200);
   digitalWrite(DO, HIGH);
@@ -302,6 +316,10 @@ void HappyBirthday()
   delay(250);
   digitalWrite(RE, HIGH);
   delay(200);
+  digitalWrite(DO, LOW);
+  delay(250);
+  digitalWrite(DO, HIGH);
+  delay(1000);
 
   digitalWrite(TI, LOW);
   delay(250);
